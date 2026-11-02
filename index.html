@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Wedding Desk Demo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Great+Vibes&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one calm column. Summary strip first, then replies, costs, checklist as scannable lists. */
+:root{
+  --bg:#fbf1ef; --surface:#fffcfa; --fg:#3b2c33; --muted:#7a666d; --line:#ecd6d3;
+  --accent:#4f7455; --accent-soft:#e4eee1; --rose:#a65a68; --bg2:var(--bg);
+  --late:#b3261e; --late-soft:#fbe4e1; --soon:#8a5a00; --soon-soft:#fbefd2; --ok:#2c7a3f; --ok-soft:#dff1e3;
+  --display:'Cormorant Garamond',Georgia,serif; --script:'Great Vibes','Snell Roundhand',cursive; --body:'DM Sans',system-ui,sans-serif; --mono:'DM Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#231a1f; --surface:#2e2328; --fg:#f6ebe8; --muted:#bba7ad; --line:#47373f;
+  --accent:#9cc7a1; --accent-soft:#2c4031; --rose:#e6a6b1;
+  --late:#ff8a80; --late-soft:#3d1c1a; --soon:#f2c15c; --soon-soft:#3a2d0e; --ok:#7fd48f; --ok-soft:#173222; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#231a1f; --surface:#2e2328; --fg:#f6ebe8; --muted:#bba7ad; --line:#47373f;
+  --accent:#9cc7a1; --accent-soft:#2c4031; --rose:#e6a6b1;
+  --late:#ff8a80; --late-soft:#3d1c1a; --soon:#f2c15c; --soon-soft:#3a2d0e; --ok:#7fd48f; --ok-soft:#173222; color-scheme:dark}
+body{background:var(--bg);background-image:linear-gradient(180deg,var(--bg) 0%,var(--bg) 22%,var(--bg2) 100%);background-repeat:no-repeat;color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-block:52px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:28px;position:relative;z-index:1}
+h1,h2{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-family:var(--script);font-weight:400;font-size:3.4rem;line-height:1.05;color:var(--rose);letter-spacing:0}
+h2{font-size:1.6rem;font-weight:600}
+.sub{color:var(--muted);margin:6px 0 0}
+.mono,.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
+.count{font-family:var(--display);font-weight:600;font-size:3rem;line-height:1;color:var(--rose)}
+.count small{display:block;font:500 .75rem var(--body);color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-top:4px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+.tile b{display:block;font:500 1.5rem var(--mono);font-variant-numeric:tabular-nums}
+.tile span{font-size:.78rem;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.tile.late b{color:var(--late)}
+section{display:flex;flex-direction:column;gap:12px;min-width:0}
+.head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 16px}
+.head p{margin:0;color:var(--muted);font-size:.85rem}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.row{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;padding:12px 14px;border-top:1px solid var(--line);align-items:start}
+.row:first-child{border-top:0}
+.row>*{min-width:0}
+.row.done .t{text-decoration:line-through;color:var(--muted)}
+.t{font-weight:500}
+.d{color:var(--muted);font-size:.85rem;margin-top:2px;overflow-wrap:anywhere}
+.pill{font:500 .72rem var(--mono);padding:2px 8px;border-radius:99px;white-space:nowrap;background:var(--accent-soft);color:var(--accent)}
+.pill.late{background:var(--late-soft);color:var(--late)}
+.pill.soon{background:var(--soon-soft);color:var(--soon)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.mute{background:var(--bg);color:var(--muted)}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);margin:2px 0 0}
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th{font:500 .72rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:top}
+tr.cat td{background:var(--bg);font:700 .78rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);border-top:1px solid var(--line)}
+td.r,th.r{text-align:right}
+td input[type=number]{width:96px;font:inherit;font-family:var(--mono);padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);text-align:right}
+.totals{display:flex;flex-wrap:wrap;gap:8px 28px;background:var(--accent-soft);border-radius:10px;padding:14px 16px}
+.totals div{display:flex;flex-direction:column}
+.totals b{font:500 1.35rem var(--mono)}
+.totals span{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:500 .78rem var(--body);padding:6px 10px;border:0;background:var(--surface);color:var(--muted);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--bg)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{font-size:.82rem;color:var(--muted)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.up{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);border:1px dashed var(--line);border-radius:10px;padding:14px}
+.up.drag{border-color:var(--accent);background:var(--accent-soft)}
+.up select,.btn{font:500 .85rem var(--body);padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.btn.warn{border-color:var(--late);color:var(--late)}
+a{color:var(--accent)}
+#cpanel{position:static;max-height:260px;overflow:auto;margin-top:6px;box-shadow:none;width:auto}
+#ckeys{min-height:90px}
+.mail{margin-top:8px}
+.mail summary{cursor:pointer;font:500 .82rem var(--body);color:var(--accent);padding:4px 0}
+.mailbody{margin-top:6px;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;background:var(--bg);padding:12px 14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.mh{display:flex;flex-direction:column;gap:2px}
+.mh b{font-weight:600;overflow-wrap:anywhere}
+.mh span{font-size:.78rem;color:var(--muted)}
+.mt{white-space:pre-wrap;font-size:.9rem;line-height:1.6;overflow-wrap:anywhere;color:var(--fg)}
+.matt{display:flex;gap:6px;flex-wrap:wrap}
+.mailbody a{font-size:.82rem}
+.dd{position:relative;align-self:flex-start}
+.dd summary{list-style:none;cursor:pointer;font:500 .85rem var(--body);min-height:38px;display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border:1px solid var(--line);border-radius:99px;background:var(--surface);color:var(--fg)}
+.dd summary::-webkit-details-marker{display:none}
+.dd summary::after{content:'\25BE';color:var(--accent)}
+.dd[open] summary{border-color:var(--accent)}
+.dd summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ddp{position:absolute;z-index:5;top:100%;left:0;margin-top:6px;min-width:230px;max-width:calc(100vw - 32px);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:2px;box-shadow:0 10px 30px -12px rgba(0,0,0,.35)}
+.opt{display:flex;gap:10px;align-items:center;padding:10px;border-radius:8px;cursor:pointer;font:500 .9rem var(--body)}
+.opt:hover{background:var(--accent-soft)}
+.opt input{width:18px;height:18px}
+.ddacts{display:flex;gap:8px;padding:8px 6px 4px;border-top:1px solid var(--line);margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chips>span{font:500 .72rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.chip{font:500 .85rem var(--body);min-height:38px;padding:6px 14px;border:1px solid var(--line);border-radius:99px;background:var(--surface);color:var(--muted);cursor:pointer}
+.chip[aria-pressed=true]{background:var(--accent-soft);border-color:var(--accent);color:var(--fg)}
+.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pals{position:relative;align-self:flex-start}
+.palbtn{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--accent);display:inline-grid;place-items:center;cursor:pointer;padding:0}
+.palbtn[aria-expanded=true]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.palbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.palpanel{position:absolute;z-index:6;top:100%;left:0;margin-top:6px;display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px;min-width:230px;max-width:calc(100vw - 32px);box-shadow:0 10px 30px -12px rgba(0,0,0,.35)}
+[hidden],.palpanel[hidden]{display:none!important}
+.palpanel .pal{width:100%;justify-content:flex-start}
+.pals>span{font:500 .72rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pal{display:inline-flex;align-items:center;gap:8px;font:500 .8rem var(--body);padding:5px 12px 5px 6px;border:1px solid var(--line);border-radius:99px;background:var(--surface);color:var(--fg);cursor:pointer}
+.pal[aria-pressed=true]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.pal i{width:20px;height:20px;border-radius:50%;border:1px solid var(--line)}
+.frame{position:fixed;inset:0;z-index:0;pointer-events:none}
+.frame::before,.frame::after{content:'';position:absolute;border:1px solid var(--rose)}
+.frame::before{inset:10px;opacity:.55}
+.frame::after{inset:15px;opacity:.28}
+.frame i{position:absolute;width:84px;height:84px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpath d='M8 8 C42 12 74 34 100 76' fill='none' stroke='%237fa583' stroke-width='1.6' stroke-linecap='round'/%3E%3Cg fill='%238fb593'%3E%3Cellipse cx='28' cy='14' rx='10' ry='4.2' transform='rotate(18 28 14)'/%3E%3Cellipse cx='47' cy='24' rx='10' ry='4.2' transform='rotate(38 47 24)'/%3E%3Cellipse cx='64' cy='40' rx='10' ry='4.2' transform='rotate(55 64 40)'/%3E%3Cellipse cx='80' cy='58' rx='9' ry='4' transform='rotate(68 80 58)'/%3E%3Cellipse cx='20' cy='28' rx='9' ry='4' transform='rotate(78 20 28)'/%3E%3Cellipse cx='36' cy='44' rx='9' ry='4' transform='rotate(70 36 44)'/%3E%3C/g%3E%3Cg fill='%23e8aeb7'%3E%3Ccircle cx='14' cy='14' r='6'/%3E%3Ccircle cx='22' cy='9' r='3.6'/%3E%3Ccircle cx='9' cy='23' r='3.6'/%3E%3C/g%3E%3Ccircle cx='14' cy='14' r='2.2' fill='%23f6dfa8'/%3E%3C/svg%3E") no-repeat center/contain;opacity:.9}
+.frame i:nth-child(1){top:10px;left:10px}
+.frame i:nth-child(2){top:10px;right:10px;transform:scaleX(-1)}
+.frame i:nth-child(3){bottom:10px;left:10px;transform:scaleY(-1)}
+.frame i:nth-child(4){bottom:10px;right:10px;transform:scale(-1,-1)}
+.tile,.list,.tablewrap,.draft,.up{box-shadow:0 1px 0 rgba(166,90,104,.08),0 6px 18px -12px rgba(166,90,104,.35)}
+@media (max-width:520px){.frame i{width:56px;height:56px}h1{font-size:2.8rem}}
+.tog{all:unset;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+.tog::before{content:'\25BE';font-size:.9em;color:var(--accent);transition:transform .15s}
+section.closed .tog::before{transform:rotate(-90deg)}
+section.closed>:not(.head){display:none}
+.tog:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.nav button{font:500 .85rem var(--body);padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer}
+@media (prefers-reduced-motion:reduce){.tog::before{transition:none}}
+.draft{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.draft label{font:500 .72rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.draft input[type=text],.draft textarea{width:100%;box-sizing:border-box;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.draft textarea{min-height:240px;line-height:1.5;resize:vertical}
+.draft .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.nav{display:flex;flex-wrap:wrap;gap:8px}
+.nav a{font:500 .85rem var(--body);text-decoration:none;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.nav a.here{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+@media (max-width:520px){.row{grid-template-columns:auto 1fr}.row .side{grid-column:2}}
+
+html{color-scheme:light}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<script>
+/* Standalone shim: gives the page the small storage API it expects, using the browser's localStorage.
+   When the page runs inside Claude (window.claude exists) this does nothing. */
+if(!window.claude){(function(){
+  const mem={};
+  const st={get:k=>{try{return localStorage.getItem(k)}catch(e){return mem[k]??null}},
+            set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){mem[k]=v}},
+            del:k=>{try{localStorage.removeItem(k)}catch(e){delete mem[k]}}};
+  const P='wdd:';
+  const subs={};
+  const read=(k,d)=>{try{return JSON.parse(st.get(P+k))??d}catch(e){return d}};
+  const fire=k=>(subs[k]||[]).forEach(f=>f());
+  const blobUrl=id=>{
+    const raw=st.get(P+'asset:'+id);if(!raw)return '';
+    try{const [h,b]=raw.split(',');const mime=(h.match(/:(.*?);/)||[])[1]||'application/octet-stream';
+      const bin=atob(b),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+      return URL.createObjectURL(new Blob([u],{type:mime}));}catch(e){return ''}
+  };
+  const urls={};
+  const db={
+    doc:path=>({
+      onSnapshot(cb){(subs['d:'+path]=subs['d:'+path]||[]).push(()=>cb(snap()));setTimeout(()=>cb(snap()),0);function snap(){const d=read('doc:'+path,null);return {exists:d!==null,data:()=>d}}return ()=>{}},
+      set(v){st.set(P+'doc:'+path,JSON.stringify(v));fire('d:'+path);return Promise.resolve()}
+    }),
+    collection:name=>({
+      onSnapshot(cb){(subs['c:'+name]=subs['c:'+name]||[]).push(()=>cb(snap()));setTimeout(()=>cb(snap()),0);
+        function snap(){const rows=read('col:'+name,[]);return {docs:rows.map(r=>{const {id,...rest}=r;if(rest.assetId)rest.url=urls[rest.assetId]||(urls[rest.assetId]=blobUrl(rest.assetId));return {id,data:()=>rest}})}}return ()=>{}},
+      add(v){const rows=read('col:'+name,[]);const id='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);const {url,...rest}=v;rows.push({id,...rest});st.set(P+'col:'+name,JSON.stringify(rows));fire('c:'+name);return Promise.resolve({id})},
+      doc:id=>({delete(){const rows=read('col:'+name,[]).filter(r=>r.id!==id);st.set(P+'col:'+name,JSON.stringify(rows));fire('c:'+name);return Promise.resolve()}})
+    })
+  };
+  const assets={
+    upload(f){return new Promise((res,rej)=>{
+      if(f.size>1500000){rej({code:'too_big'});return}
+      const r=new FileReader();r.onload=()=>{const id='a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+        try{st.set(P+'asset:'+id,r.result)}catch(e){rej({code:'full'});return}
+        res({id,url:'',sizeBytes:f.size,contentType:f.type})};r.onerror=()=>rej({code:'read'});r.readAsDataURL(f)})},
+    delete(id){st.del(P+'asset:'+id);delete urls[id];return Promise.resolve()}
+  };
+  window.claude={use:async n=>n==='db'?db:n==='assets'?assets:null};
+})();}
+</script>
+
+
+<div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+<div class="wrap">
+  <header class="top" id="top">
+    <div>
+      <h1>Wedding Desk</h1>
+      <p class="sub">Alex &amp; Sam · Sat 27 Feb 2027 · 12 Example Lane, Sampletown · 80–100 guests</p>
+      <p class="sub note"><b>Demo with fictional data.</b> Every name, email, phone number, address and price here is made up. Information as of <span id="asof"></span>.</p>
+    </div>
+    <div class="count"><span id="days">–</span><small>days to go</small></div>
+  </header>
+
+  <nav class="nav" aria-label="Wedding pages">
+    <a class="here" href="#top" data-go="top">Home</a>
+    <a href="#documents" data-go="documents">Documents</a>
+  </nav>
+
+  <div class="pals" id="pals" role="group" aria-label="Colour theme"></div>
+
+  <details class="dd" id="dd"><summary>Sections</summary><div class="ddp" id="chips" role="group" aria-label="Show or hide sections"></div></details>
+
+  <div class="tiles" id="tiles"></div>
+
+  <section id="documents">
+    <div class="head"><h2>Documents</h2><p><a href="#top" data-go="top">↑ Back to home</a></p></div>
+    <p class="note">Your own files: signed T&amp;Cs, quotes, receipts. PDFs, images and text files.</p>
+    <div class="up" id="up">
+      <label for="dvendor" class="note">File under</label>
+      <select id="dvendor"></select>
+      <input type="file" id="dfile" multiple accept="application/pdf,image/*,text/*,.csv,.md,.json" hidden>
+      <button class="btn primary" id="dpick" type="button">Add documents</button>
+      <span class="note" id="dstat">Or drop files here.</span>
+    </div>
+    <div class="list" id="docs"></div>
+  </section>
+
+  <section id="draftbox" hidden>
+    <div class="head"><h2>Draft email</h2><p>Copy it into your email app. Nothing is sent from here.</p></div>
+    <div class="draft">
+      <div><label for="dto">To</label><input type="text" id="dto"></div>
+      <div><label for="dsub">Subject</label><input type="text" id="dsub"></div>
+      <div><label for="dbody">Message</label><textarea id="dbody"></textarea></div>
+      <div class="acts">
+        <button class="btn primary" id="dcopy" type="button">Copy message</button>
+        <button class="btn" id="dcopyall" type="button">Copy subject and message</button>
+        <select id="dtone" aria-label="Tone"><option>Friendly</option><option>Brief</option><option>Formal</option></select>
+        <button class="btn" id="dpolish" type="button">Rewrite with Claude</button>
+        <button class="btn" id="dclose" type="button">Close</button>
+        <span class="note" id="dmsg"></span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><h2>Replies and deadlines</h2><p>Open Last email to read it. Tick the box when done.</p></div>
+    <div class="list" id="replies"></div>
+  </section>
+
+  <section id="compose">
+    <div class="head"><h2>Write an email</h2><p>Nothing is sent from here.</p></div>
+    <div class="draft">
+      <div>
+        <label>To</label>
+        <details class="dd" id="rdd"><summary id="cto">Choose recipients</summary><div class="ddp" id="cpanel"></div></details>
+        <div class="note" id="cchips" style="margin-top:6px"></div>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><input type="text" id="cextra" placeholder="Add another email address" aria-label="Add another email address" style="flex:1;min-width:200px"><button class="btn" id="cadd" type="button">Add</button></div>
+      </div>
+      <div><label for="csub">Subject</label><input type="text" id="csub"></div>
+      <div><label for="ckeys">Key points</label><textarea id="ckeys" placeholder="e.g. confirm the Sunday site visit, ask about flooring for uneven ground, mention the aerial photo"></textarea></div>
+      <div class="acts">
+        <select id="ctone" aria-label="Tone"><option>Friendly</option><option>Brief</option><option>Formal</option></select>
+        <button class="btn primary" id="cwrite" type="button">Write with Claude</button>
+      </div>
+      <div><label for="cbody">Message</label><textarea id="cbody" placeholder="Write your own, or fill the key points above and click Write with Claude."></textarea></div>
+      <div class="acts">
+        <button class="btn" id="ccopy" type="button">Copy message</button>
+        <button class="btn" id="ccopyall" type="button">Copy subject and message</button>
+        <button class="btn" id="cclear" type="button">Clear</button>
+        <span class="note" id="cmsg" role="status"></span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><h2>Costs</h2><p>Tick the quotes you are going with. Type an amount to override or fill a blank. NZD.</p></div>
+    <div class="totals" id="totals"></div>
+    <div class="tablewrap"><table><thead><tr><th style="width:36px"></th><th>Vendor and item</th><th>Status</th><th class="r">Quoted</th><th class="r">Your amount</th></tr></thead><tbody id="costs"></tbody></table></div>
+    <p class="note" id="costnotes"></p>
+  </section>
+
+  <section>
+    <div class="head"><h2>What is sorted</h2><p id="cl-sum"></p></div>
+    <div class="list" id="check"></div>
+  </section>
+</div>
+
+<script>
+const WEDDING = new Date(2027,1,27);
+const ASOF = new Date(2026,9,29);
+const D = (y,m,d)=>new Date(y,m-1,d);
+const REPLIES = [
+ {id:'r-great',kind:'reply',since:D(2026,10,29),t:'Sample Catering: confirm Sunday 3pm site visit, then return signed T&Cs',d:'Jamie sent a revised proposal (v2) on 29 Oct and asked if Sunday around 3pm suits for a site visit. The T&Cs (sent 27 Oct) still need signing to lock the date, then the 30% deposit (can be based on 80 guests). jamie@samplecatering.example'},
+ {id:'r-c2c',kind:'reply',since:D(2026,10,29),t:'Harbour Events: say if you still need them',d:'Vera Example asked on 28 Oct. A short decline is fine if you go with Sample Catering. vera@harbourevents.example'},
+ {id:'r-urban',kind:'reply',since:D(2026,10,27),t:'City Plates: reply to Bailey',d:'Plated 3-course proposal sent 19 Oct, chased 26 Oct. bailey@cityplates.example'},
+ {id:'r-cg',kind:'reply',since:D(2026,10,21),t:'The Mixer Man: confirm the date',d:'Fiona asked you to lock 27 Feb. Bar $1,250 + $150 delivery; the $500 licence fee is waived with cocktails plus beer/wine. hello@mixerman.example'},
+ {id:'r-gp',kind:'reply',since:D(2026,10,19),t:'Pour &amp; Co: send bar times, address, cocktail choices',d:'Gemma Placeholder is waiting on these to firm up the BYO bar quote. gemma@pourandco.example'},
+ {id:'r-fork',kind:'reply',since:D(2026,10,20),t:'Table Kitchen: reply to Ellis',d:'Proposal sent 12 Oct, chased 19 and 20 Oct. Another client is asking for the same date.'},
+ {id:'r-fernz',kind:'reply',since:D(2026,10,16),t:'Fern Hill Catering: follow up or close off',d:'Available for your date, $250 Sampletown delivery fee. No reply from you since 16 Oct.'},
+ {id:'r-flag',kind:'reply',since:D(2026,10,21),t:'Summit Tents: review the marquee proposal',d:'Marquee Tent 20x14m. They note you need about 23x17m. Check this is not a duplicate of your confirmed marquee.'},
+ {id:'r-whippy',kind:'wait',since:D(2026,10,21),t:'Cone Cart North: waiting for their confirmation',d:'Requested 27 Feb, 3pm, 90 people, $400 minimum spend, no hire fee. Confirm 3pm or 3:30pm start later.'},
+ {id:'k-bal',kind:'date',due:D(2027,1,27),t:'Sample Catering: remaining balance due',d:'One month before the wedding. Check the invoice for the exact date.'},
+ {id:'k-menu',kind:'date',due:D(2027,2,9),t:'City Plates: menu selection due',d:'Only matters if you choose them.'},
+ {id:'k-final',kind:'date',due:D(2027,2,16),t:'Final guest numbers and dietary needs',d:'Sample Catering and City Plates both need these. Numbers can go up after this, not down.'},
+ {id:'k-hire',kind:'date',due:D(2027,2,20),t:'Hire Hub: last day to edit your order',d:'Orders can be changed until 1 week before delivery. Order not placed yet.'},
+ {id:'k-wed',kind:'date',due:D(2027,2,27),t:'Wedding day',d:'Guests from 3pm, dinner 5–5:30pm, finish about 10pm.'}
+];
+/* Costs. q = [low, high] as quoted, GST inclusive as stated by the vendor. null = in a PDF or not yet given. */
+const COSTS = [
+ {c:'Catering',id:'c-great',v:'Sample Catering',i:'Table buffet, chosen 25 Oct. 30% deposit on signing.',q:null,s:'Chosen',inc:true},
+ {c:'Catering',id:'c-c2c',v:'Harbour Events',i:'Their estimate: canapés, mains, dessert, plus crockery and glass.',q:[12600,18000],s:'Quote',inc:false},
+ {c:'Catering',id:'c-urban',v:'City Plates',i:'Plated 3 courses. Total in PDF. Kitchen setup subject to site visit.',q:null,s:'Quote',inc:false},
+ {c:'Catering',id:'c-fork',v:'Table Kitchen',i:'Proposal PDF 12 Oct.',q:null,s:'Quote',inc:false},
+ {c:'Catering',id:'c-fernz',v:'Fern Hill Catering',i:'Delivery fee to Sampletown only. Menu price not given.',q:[250,250],s:'Quote',inc:false},
+ {c:'Drinks',id:'d-van',v:'The Mixer Man',i:'Caravan bar $1,250 plus $150 delivery.',q:[1400,1400],s:'Quote',inc:true},
+ {c:'Drinks',id:'d-cock',v:'The Mixer Man',i:'Cocktails for 100 guests.',q:[1950,1950],s:'Quote',inc:true},
+ {c:'Drinks',id:'d-bw',v:'The Mixer Man',i:'Beer and wine package, 80 guests. Skip if you supply your own wine.',q:[5336,5336],s:'Quote',inc:false},
+ {c:'Drinks',id:'d-gp',v:'Pour &amp; Co',i:'BYO hosted caravan bar, about 80 guests. 4h $1,299, 6h $1,599, 8h $1,899.',q:[1299,1899],s:'Quote',inc:false},
+ {c:'Marquee and hire',id:'h-marq',v:'Marquee',i:'Marked as booked and confirmed. Price not in your emails.',q:null,s:'Booked',inc:true},
+ {c:'Marquee and hire',id:'h-flag',v:'Summit Tents',i:'Marquee Tent 20x14m proposal. Price on their link.',q:null,s:'Quote',inc:false},
+ {c:'Marquee and hire',id:'h-click',v:'Hire Hub',i:'Tables, chairs, etc. Priced when you place the order.',q:null,s:'Not ordered',inc:true},
+ {c:'Extras',id:'e-whip',v:'Cone Cart North',i:'Minimum spend on ice creams, no hire fee. Awaiting confirmation.',q:[400,400],s:'Pending',inc:true}
+];
+const CHECK = [
+ {id:'venue',t:'Venue',n:'Family home, 12 Example Lane',s:2},
+ {id:'marq',t:'Marquee',n:'Booked and confirmed. Supplier and price not in your emails.',s:2},
+ {id:'cater',t:'Caterer',n:'Sample Catering chosen. T&Cs not signed, deposit not paid.',s:1},
+ {id:'drinks',t:'Bar and drinks',n:'Quotes from Mixer Man and Pour & Co. Nothing locked.',s:1},
+ {id:'hire',t:'Tables, chairs, crockery hire',n:'Hire Hub order not built yet.',s:1},
+ {id:'ice',t:'Ice cream',n:'Cone Cart requested. Awaiting confirmation.',s:1},
+ {id:'lic',t:'Marriage licence',n:'Sam sent the NZ government link on 17 Oct. No sign it is lodged.',s:1},
+ {id:'cel',t:'Celebrant',n:'Nothing in your emails.',s:0},
+ {id:'photo',t:'Photographer / videographer',n:'Nothing in your emails.',s:0},
+ {id:'flor',t:'Florist and decorations',n:'Nothing in your emails.',s:0},
+ {id:'music',t:'Music, DJ or band, PA',n:'Nothing in your emails.',s:0},
+ {id:'hair',t:'Hair and makeup',n:'Nothing in your emails.',s:0},
+ {id:'cake',t:'Cake',n:'Nothing in your emails.',s:0},
+ {id:'inv',t:'Invitations and RSVPs',n:'Nothing in your emails. You need numbers by 16 Feb.',s:0},
+ {id:'out',t:'Outfits and rings',n:'Nothing in your emails.',s:0},
+ {id:'acc',t:'Accommodation and transport',n:'Nothing in your emails.',s:0}
+];
+const ST=['Not started','In progress','Sorted'];
+let S={done:{},inc:{},amt:{},chk:{}};
+let ref=null,t=null;
+const $=id=>document.getElementById(id);
+const OPENMAIL=new Set();
+let DYN={},mailRef=null,EXTRA=[];
+const LASTMAIL={
+ 'r-great':{who:'Jamie Sample',from:'Jamie Sample, Sample Catering',to:'Alex',when:'Thu 29 Oct, 12:43 pm',subject:'Re: New submission from samplecatering.example',body:`Hi Alex,
+
+Thank you for the call! I’ve revised the proposal based on few assumptions, which we can revise again upon site visit 😊
+
+Can you do this Sunday around 3pm?
+
+Kind regards,
+Jamie Sample
+Sales Manager`,att:['SAMPLE Catering Proposal v2.pdf']},
+ 'r-c2c':{who:'Vera Example',from:'Vera Example, Harbour Events',to:'Alex',when:'Thu 29 Oct, 7:43 am',subject:'RE: Wedding Enquiry',body:`Hi Alex,
+
+Do you need us to stay in touch for your wedding catering or have you organised someone else to look after you.
+
+Just thought I better do a follow up.
+
+Thanks
+
+Vera Example
+Manager`},
+ 'r-urban':{who:'Bailey Demo',from:'Bailey Demo, City Plates',to:'Sam and Alex',when:'Tue 27 Oct, 9:10 am',subject:'RE: CATERING PROPOSAL - Sam & Alex’s Wedding - Saturday, 27 February 2027',body:`Hi Sam & Alex,
+
+Hope you are well and had a fantastic long weekend!
+
+Just wanted to confirm that you received the proposal sent through last week for your Wedding?
+Please don’t hesitate to reach out if you had any questions, or if I can provide any further information at this stage.
+
+If you’d like to discuss the proposal in further detail over a call or Teams meeting, please just let me know when best works for you.
+
+Look forward to hearing from you.
+
+Ngā mihi nui,
+Bailey
+
+Bailey Demo
+Senior Sales Executive`,att:['CATERING PROPOSAL.pdf','Canapes Summer Menu - 2027.pdf','Seated Dinner Summer Menu - 2027.pdf','Beverage packages and lists (3 PDFs)']},
+ 'r-cg':{who:'Fiona Fakename',from:'Fiona Fakename, The Mixer Man',to:'Alex',when:'Wed 21 Oct, 11:15 pm',subject:'Re: Bar Hiring',body:`Hi Alex,
+
+Just following up to see if you’ve had a chance to look over the details and options for February 27th, 2027.
+
+Let me know if you have any questions or if you'd like me to lock the date in for you!
+
+Chat soon 😊
+
+All the best,
+Fiona Fakename
+The Mixer Man`},
+ 'r-gp':{who:'Gemma Placeholder',from:'Gemma Placeholder, Pour & Co',to:'Alex',when:'Mon 19 Oct, 8:11 am',subject:'Re: Pour & Co | Wedding Bar Quote – 27 February 2027',body:`Hi Alex,
+
+Just checking in regarding your wedding on 27 February 2027.
+
+I’d still love to help with the bar service, and just need a couple of details before I can narrow everything down properly.
+
+Do you know roughly what time you would like the bar operating, and could you please send through the full Example Lane venue address?
+
+Also, are you thinking of including cocktails, or mainly beer, wine, RTDs and spirits/mixers?
+
+Once I have those details I can recommend the best package for you.
+
+Thanks Alex!
+
+Gemma
+Pour & Co`},
+ 'r-fork':{who:'Ellis Demo',from:'Ellis Demo, Table Kitchen',to:'Alex',when:'Tue 20 Oct, 11:17 am',subject:'Re: 27 Feb 2027 Wedding Catering',body:`Hi Alex,
+
+Just touching base to see how you were going with your wedding plans? We are about to send a quote out for another client on this same date, so wanted to check in to see if you had planned to book with us first.
+
+Thanks again,
+
+Ellis Demo | FORK`},
+ 'r-fernz':{who:'Sasha Sample',from:'Sasha Sample, Fern Hill Catering',to:'Alex and Sam',when:'Fri 16 Oct, 3:50 pm',subject:'RE: Fw: RE: Web enquiry from Sam Example for Fern Hill Catering',body:`Good afternoon Alex,
+Yes, plates and cutlery are included in the price.
+We only provide glassware if we are supplying beverages.
+
+Kind Regards,
+Sasha
+
+Sasha Sample
+Events Manager
+Fern Hill Catering`},
+ 'r-flag':{who:'Gina Test',from:'Gina Test, Summit Tents',to:'Alex',when:'Wed 21 Oct, 12:27 pm',subject:'Re: Alex Example 27.2.2027',body:`Hi Alex,
+
+Just a quick check-in to see if you have any questions about the Marquee Tent proposal or if you would like to move forward with Summit for your wedding.
+
+Please let me know if you would like to arrange a site visit or adjust any details in the quote.
+
+Kind regards,
+Gina
+
+GINA TEST
+info@summittents.example`},
+ 'r-whippy':{who:'Sam (sent)',from:'Sam',to:'Dana Demo, Cone Cart',when:'Wed 21 Oct, 11:40 pm',subject:'Re: Cone Cart Website Contact Form',body:`Hi Dana,
+
+Thanks so much for confirming availability! We’d love to lock in the 27th February booking with you.
+We haven’t finalised yet whether we’ll start at 3pm or 3:30pm, would it be okay to secure the date now and confirm the exact start time with you later?
+We will meet the $400 minimum spend.
+
+Cheers,
+Sam
+
+Their earlier reply (20 Oct): available on 27 Feb 2027 at 3pm. Minimum spend is $400 on ice creams, no additional hire fee.`}
+};
+function mailHtml(id,mm){
+  const m=mm||DYN[id]||LASTMAIL[id]; if(!m)return '';
+  const att=m.att?`<div class="matt">${m.att.map(a=>`<span class="pill mute">${esc(a)}</span>`).join('')}</div>`:'';
+  return `<details class="mail" data-mail="${id}" ${OPENMAIL.has(id)?'open':''}><summary>Last email ${m.fresh?'<span class="pill ok">new</span> ':''}· ${esc(m.who)} · ${esc(m.when)}</summary><div class="mailbody"><div class="mh"><b>${esc(m.subject)}</b><span>From ${esc(m.from)} to ${esc(m.to)}</span></div><div class="mt">${esc(m.body)}</div>${att}</div></details>`;
+}
+document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.dataset&&d.dataset.mail){if(d.open)OPENMAIL.add(d.dataset.mail);else OPENMAIL.delete(d.dataset.mail);}},true);
+const QMAP={};const QSEARCH={'r-great':'samplecatering.example','r-c2c':'harbourevents.example','r-urban':'cityplates.example','r-cg':'mixerman.example','r-gp':'pourandco.example','r-fork':'"Table Kitchen"','r-fernz':'Fern Hill Catering','r-flag':'"Summit Tents"','r-whippy':'conecart.example'};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-NZ');
+const today=()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate())};
+const days=(a,b)=>Math.round((a-b)/864e5);
+const fd=d=>d.toLocaleDateString('en-NZ',{day:'numeric',month:'short',year:'numeric'});
+function save(){ if(!ref)return; clearTimeout(t); t=setTimeout(()=>{ref.set(S).catch(()=>{})},400); }
+const incl=c=>c.id in S.inc?S.inc[c.id]:c.inc;
+const status=c=>c.id in S.chk?S.chk[c.id]:c.s;
+
+function render(){
+  const now=today();
+  $('asof').textContent=fd(ASOF);
+  $('days').textContent=Math.max(0,days(WEDDING,now));
+
+  // replies
+  const items=REPLIES.map(r=>{
+    const done=!!S.done[r.id];
+    let pill,cls,sort;
+    if(r.kind==='date'){const n=days(r.due,now);sort=n+1000;
+      pill=n<0?'passed':n===0?'today':'in '+n+' days';cls=n<0?'mute':n<=14?'late':n<=45?'soon':'mute';}
+    else{const n=days(now,r.since);sort=-n;
+      pill=(r.kind==='wait'?'waiting ':'unanswered ')+n+' days';cls=r.kind==='wait'?'mute':n>=7?'late':'soon';}
+    return {r,done,pill,cls,sort};
+  }).sort((a,b)=>(a.done-b.done)||(a.sort-b.sort));
+  $('replies').innerHTML=items.map(({r,done,pill,cls})=>`<div class="row ${done?'done':''}">
+    <input type="checkbox" data-done="${r.id}" ${done?'checked':''} aria-label="Done">
+    <div><div class="t">${QMAP[r.id]?`<a href="https://mail.google.com/mail/u/0/#search/${encodeURIComponent(QMAP[r.id])}" target="_blank" rel="noopener">${r.t}</a>`:r.t}</div><div class="d">${r.d}</div>${mailHtml(r.id)}</div>
+    <div class="side"><span class="pill ${done?'ok':cls}">${done?'done':pill}</span><div class="d mono" style="text-align:right">${fd(r.due||r.since)}</div>${DRAFTS[r.id]?`<div style="text-align:right;margin-top:6px"><button class="btn" type="button" data-draft="${r.id}">Draft email</button></div>`:''}</div></div>`).join('');
+  const open=items.filter(i=>!i.done&&i.r.kind==='reply');
+  const late=open.filter(i=>i.cls==='late'||i.cls==='soon').length;
+
+  // costs
+  let lo=0,hi=0,unk=0,cat='',h='';
+  COSTS.forEach(c=>{
+    if(c.c!==cat){cat=c.c;h+=`<tr class="cat"><td colspan="5">${cat}</td></tr>`;}
+    const on=incl(c),a=S.amt[c.id];
+    const qtxt=c.q?(c.q[0]===c.q[1]?fmt(c.q[0]):fmt(c.q[0])+' to '+fmt(c.q[1])):'in PDF / unknown';
+    if(on){ if(a!=null&&a!==''){lo+=+a;hi+=+a;} else if(c.q){lo+=c.q[0];hi+=c.q[1];} else unk++; }
+    h+=`<tr><td><input type="checkbox" data-inc="${c.id}" ${on?'checked':''} aria-label="Include"></td>
+    <td><div class="t">${c.v}</div><div class="d">${c.i}</div></td>
+    <td><span class="pill ${c.s==='Chosen'||c.s==='Booked'?'ok':'mute'}">${c.s}</span></td>
+    <td class="r num">${qtxt}</td>
+    <td class="r"><input type="number" min="0" step="50" data-amt="${c.id}" value="${a??''}" aria-label="Your amount for ${c.v}"></td></tr>`;
+  });
+  $('costs').innerHTML=h;
+  $('totals').innerHTML=`<div><b>${lo===hi?fmt(lo):fmt(lo)+' to '+fmt(hi)}</b><span>Ticked items, known amounts</span></div>
+   <div><b>${unk}</b><span>Ticked items with no amount yet</span></div>
+   <div><b>${fmt(90*140)} to ${fmt(90*160)}</b><span>Your food budget, 90 guests at $140–160</span></div>`;
+  $('costnotes').textContent='Mixer Man beer and wine: $58 per head for 80 guests plus GST is $5,336, so the email figure for "100 guests" looks like it was priced for 80. Harbour Events per-head items add to $135–160, but their own estimate range is higher, so ask which is right. Mixer Man also holds a $150 refundable breakage bond.';
+
+  // checklist
+  const done=CHECK.filter(c=>status(c)===2).length,prog=CHECK.filter(c=>status(c)===1).length;
+  $('cl-sum').textContent=`${done} sorted · ${prog} in progress · ${CHECK.length-done-prog} not started`;
+  $('check').innerHTML=CHECK.map(c=>{const s=status(c);return `<div class="row ${s===2?'done':''}">
+    <span class="pill ${s===2?'ok':s===1?'soon':'late'}">${ST[s]}</span>
+    <div><div class="t">${c.t}</div><div class="d">${c.n}</div></div>
+    <div class="side seg" role="group" aria-label="Status for ${c.t}">${ST.map((x,i)=>`<button data-chk="${c.id}" data-v="${i}" aria-pressed="${s===i}">${x}</button>`).join('')}</div></div>`}).join('');
+
+  renderExtra();
+  $('tiles').innerHTML=`
+   <div class="tile ${late?'late':''}"><b>${open.length}</b><span>Vendors awaiting your reply</span></div>
+   <div class="tile"><b>${lo===hi?fmt(lo):fmt(lo)+'+'}</b><span>Known cost so far</span></div>
+   <div class="tile"><b>${done}/${CHECK.length}</b><span>Items sorted</span></div>
+   <div class="tile"><b>16 Feb</b><span>Final numbers due</span></div>`;
+}
+const PALS=[
+ {id:'blush',name:'Blush & Sage',sw:['#fbf1ef','#4f7455']},
+ {id:'dawn',name:'Champagne to Lavender',sw:['#f7f1e6','#c9b5e8'],
+  light:{bg:'#f7f1e6',bg2:'#e6dbf4',surface:'#fffdfa',fg:'#2a2f4a',muted:'#676880',line:'#e2d8d6',accent:'#34447e','accent-soft':'#e6e8f3',rose:'#8f6f26'},
+  dark:{bg:'#151a29',bg2:'#241a36',surface:'#1f2536',fg:'#f3ecda',muted:'#aeb0c6',line:'#363c58',accent:'#a9b8ee','accent-soft':'#283461',rose:'#d9bd78'}},
+ {id:'champagne',name:'Champagne & Navy',sw:['#f7f1e6','#2c4a7a'],
+  light:{bg:'#f7f1e6',surface:'#fffdf8',fg:'#26304a',muted:'#686d80',line:'#e6dcc6',accent:'#2c4a7a','accent-soft':'#e3e9f4',rose:'#8f6f26'},
+  dark:{bg:'#151a29',surface:'#1f2638',fg:'#f3ecda',muted:'#aab0c2',line:'#343d57',accent:'#9db6e8','accent-soft':'#26335a',rose:'#d9bd78'}},
+ {id:'lavender',name:'Lavender',sw:['#f5f1fa','#6b4fa0'],
+  light:{bg:'#f5f1fa',surface:'#fffeff',fg:'#33283f',muted:'#716579',line:'#e1d7ee',accent:'#6b4fa0','accent-soft':'#ebe3f6',rose:'#94508e'},
+  dark:{bg:'#1d1727',surface:'#281f35',fg:'#f2ecf8',muted:'#b5a8c4',line:'#423654',accent:'#c3a8f0','accent-soft':'#3a2d54',rose:'#e0a8d8'}},
+ {id:'garden',name:'Garden Green',sw:['#f2f5ee','#3f6b4a'],
+  light:{bg:'#f2f5ee',surface:'#fdfefb',fg:'#25332a',muted:'#617065',line:'#d9e2d2',accent:'#3f6b4a','accent-soft':'#e1ecd9',rose:'#a65f40'},
+  dark:{bg:'#151d17',surface:'#1e2a21',fg:'#eaf2e6',muted:'#a3b5a7',line:'#314237',accent:'#93c9a0','accent-soft':'#25402c',rose:'#e0a58a'}},
+ {id:'teal',name:'Original Teal',sw:['#f3f6f6','#0d6b68'],
+  light:{bg:'#f3f6f6',surface:'#ffffff',fg:'#14262b',muted:'#5b6f74',line:'#d7e1e2',accent:'#0d6b68','accent-soft':'#dcefee',rose:'#0d6b68'},
+  dark:{bg:'#0e1819',surface:'#152325',fg:'#e6f0f0',muted:'#93aaad',line:'#273b3e',accent:'#58c4bf','accent-soft':'#17383a',rose:'#58c4bf'}}
+];
+let PAL='dawn';
+try{PAL=localStorage.getItem('wd-pal3')||'dawn'}catch(e){}
+function isDark(){const t=document.documentElement.dataset.theme;return t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme:dark)').matches)}
+function applyPal(){
+  const st=document.documentElement.style,p=PALS.find(x=>x.id===PAL)||PALS[0];
+  ['bg','bg2','surface','fg','muted','line','accent','accent-soft','rose'].forEach(k=>st.removeProperty('--'+k));
+  if(p.light){const v=isDark()?p.dark:p.light;for(const k in v)st.setProperty('--'+k,v[k]);}
+  document.querySelectorAll('.pal').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.pal===p.id)));
+}
+const PALICON='<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 0 0 0 18c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.6 1.7-1.6H17a4 4 0 0 0 4-4c0-4.4-4-8.5-9-8.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><g fill="currentColor"><circle cx="7.5" cy="11" r="1.3"/><circle cx="10.5" cy="7.2" r="1.3"/><circle cx="15" cy="7.2" r="1.3"/><circle cx="17.6" cy="11" r="1.3"/></g></svg>';
+$('pals').innerHTML=`<button type="button" class="palbtn" id="palbtn" aria-label="Colour themes" aria-expanded="false" aria-controls="palpanel">${PALICON}</button><div class="palpanel" id="palpanel" hidden>`+PALS.map(p=>`<button type="button" class="pal" data-pal="${p.id}" aria-pressed="false"><i style="background:linear-gradient(135deg,${p.sw[0]} 50%,${p.sw[1]} 50%)"></i>${esc(p.name)}</button>`).join('')+'</div>';
+function setPanel(o){$('palpanel').hidden=!o;$('palbtn').setAttribute('aria-expanded',String(o));}
+$('pals').addEventListener('click',e=>{if(e.target.closest('#palbtn')){setPanel($('palpanel').hidden);return;}const b=e.target.closest('.pal');if(!b)return;PAL=b.dataset.pal;try{localStorage.setItem('wd-pal3',PAL)}catch(err){}applyPal();setPanel(false);});
+document.addEventListener('click',e=>{if(!e.target.closest('#pals'))setPanel(false);});
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',applyPal);
+new MutationObserver(applyPal).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+applyPal();
+const SECS=[...document.querySelectorAll('section')].filter(s=>s.id!=='draftbox');
+let CLOSED=['Costs'];
+try{const v=localStorage.getItem('wd-closed2');if(v!==null)CLOSED=JSON.parse(v)}catch(e){}
+function setClosed(s,c){
+  s.classList.toggle('closed',c);
+  s.querySelector('.tog').setAttribute('aria-expanded',String(!c));
+  syncChips();
+}
+function syncChips(){document.querySelectorAll('#chips input[data-i]').forEach(c=>{c.checked=!SECS[+c.dataset.i].classList.contains('closed')})}
+function saveClosed(){try{localStorage.setItem('wd-closed2',JSON.stringify(SECS.filter(s=>s.classList.contains('closed')).map(s=>s.querySelector('h2').dataset.name)))}catch(e){}}
+SECS.forEach(s=>{
+  const h=s.querySelector('h2'),name=h.textContent;h.dataset.name=name;
+  h.innerHTML='<button type="button" class="tog" aria-expanded="true"></button>';
+  h.firstChild.textContent=name;
+  h.firstChild.addEventListener('click',()=>{setClosed(s,!s.classList.contains('closed'));saveClosed();});
+  setClosed(s,CLOSED.includes(name));
+});
+$('chips').innerHTML=SECS.map((s,i)=>`<label class="opt"><input type="checkbox" data-i="${i}" checked> ${esc(s.querySelector('h2').dataset.name)}</label>`).join('')+'<div class="ddacts"><button type="button" class="btn" id="showall">Show all</button><button type="button" class="btn" id="hideall">Hide all</button></div>';
+$('chips').addEventListener('change',e=>{const c=e.target.closest('input[data-i]');if(!c)return;setClosed(SECS[+c.dataset.i],!c.checked);saveClosed();});
+document.addEventListener('click',e=>{if(!e.target.closest('#dd'))$('dd').open=false;});
+syncChips();
+$('hideall').addEventListener('click',()=>{SECS.forEach(s=>setClosed(s,true));saveClosed();});
+$('showall').addEventListener('click',()=>{SECS.forEach(s=>setClosed(s,false));saveClosed();});
+const _SYNC={'r-great':'samplecatering.example','r-c2c':'harbourevents.example','r-urban':'cityplates.example','r-cg':'mixerman.example','r-gp':'pourandco.example','r-fork':'tablekitchen.example','r-fernz':'fernhill.example','r-flag':'summittents.example','r-whippy':'conecart.example'};
+const BASETS={'r-great':'2026-10-28T23:43:57Z','r-c2c':'2026-10-28T18:43:55Z','r-urban':'2026-10-26T20:10:17Z','r-cg':'2026-10-21T10:15:27Z','r-gp':'2026-10-18T19:11:24Z','r-fork':'2026-10-19T22:17:53Z','r-fernz':'2026-10-16T02:50:17Z','r-flag':'2026-10-20T23:27:59Z','r-whippy':'2026-10-21T10:40:35Z'};
+const MINE=['alex@example.com','sam@example.com','sam2@example.com'];
+const addrOf=m=>[m.sender,...(m.toRecipients||[]),...(m.ccRecipients||[])].join(' ').toLowerCase();
+const nzWhen=ts=>new Date(ts).toLocaleString('en-NZ',{timeZone:'Pacific/Auckland',weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'});
+function cleanBody(txt){
+  let t=String(txt||'');
+  const i=t.search(/(^|\n)On [^\n]{5,160}(\n[^\n]{0,80})?wrote:/);
+  if(i>=0)t=t.slice(0,i);
+  const out=[];
+  for(const l of t.split('\n')){
+    if(/^\s*>/.test(l))continue;
+    if(/^\s*(From|Sent):\s/.test(l)||/^-{4,}\s*Original/.test(l)||/^_{5,}/.test(l)||/^\*From:\*/.test(l))break;
+    out.push(l);
+  }
+  return out.join('\n').replace(/<(?:mailto:|tel:|https?:)[^>]*>/g,'').replace(/\[cid:[^\]]+\]/g,'').replace(/\n{3,}/g,'\n\n').trim().slice(0,2500);
+}
+function renderExtra(){
+  const el=$('wlabel_list');if(!el)return;
+  if(!EXTRA.length){el.innerHTML='<div class="row"><span></span><div class="d">Nothing yet. Nothing here.</div><span></span></div>';return;}
+  const now=today();
+  el.innerHTML=EXTRA.slice().sort((a,b)=>b.ts-a.ts).map(x=>{
+    const done=!!S.done[x.id],t=new Date(x.ts),n=days(now,new Date(t.getFullYear(),t.getMonth(),t.getDate()));
+    const pill=x.mine?'you sent '+n+'d ago':'to reply · '+n+' days',cls=x.mine?'mute':(n>=7?'late':'soon');
+    return `<div class="row ${done?'done':''}"><input type="checkbox" data-done="${esc(x.id)}" ${done?'checked':''} aria-label="Done"><div><div class="t">${esc(x.subject||'(no subject)')}</div><div class="d">${esc(x.from)}</div>${mailHtml(x.id,x)}</div><div class="side"><span class="pill ${done?'ok':cls}">${done?'done':pill}</span></div></div>`;
+  }).join('');
+}
+function applyDyn(){
+  REPLIES.forEach(r=>{const d=DYN[r.id];if(!d)return;r.kind=d.mine?'wait':'reply';const x=new Date(d.ts);r.since=new Date(x.getFullYear(),x.getMonth(),x.getDate());});
+}
+const CONTACTS=[
+ {n:'Sample Catering (Jamie Sample)',e:'jamie@samplecatering.example'},
+ {n:'Harbour Events (Vera Example)',e:'vera@harbourevents.example'},
+ {n:'City Plates (Bailey Demo)',e:'bailey@cityplates.example'},
+ {n:'The Mixer Man (Fiona Fakename)',e:'hello@mixerman.example'},
+ {n:'Pour & Co (Gemma Placeholder)',e:'gemma@pourandco.example'},
+ {n:'Table Kitchen (Ellis Demo)',e:'ellis@tablekitchen.example'},
+ {n:'Fern Hill Catering (Sasha Sample)',e:'sasha@fernhill.example'},
+ {n:'Cone Cart North (Dana Demo)',e:'north@conecart.example'},
+ {n:'Hire Hub (Robin Test)',e:'robin@hirehub.example'},
+ {n:'Summit Tents (Gina Test)',e:'info@summittents.example'},
+ {n:'Sam',e:'sam@example.com'}
+];
+const SEL=new Set();
+const cmsg=t=>{$('cmsg').textContent=t};
+function renderRcpt(){
+  $('cpanel').innerHTML=CONTACTS.map((c,i)=>`<label class="opt"><input type="checkbox" data-c="${i}" ${SEL.has(c.e)?'checked':''}> <span>${esc(c.n)}<br><span class="note">${esc(c.e)}</span></span></label>`).join('');
+  $('cto').textContent=SEL.size?'To: '+SEL.size+' selected':'Choose recipients';
+  $('cchips').textContent=SEL.size?[...SEL].join(', '):'No recipients yet.';
+}
+$('cpanel').addEventListener('change',e=>{const c=CONTACTS[+e.target.dataset.c];if(!c)return;if(e.target.checked)SEL.add(c.e);else SEL.delete(c.e);renderRcpt();});
+$('cadd').addEventListener('click',()=>{
+  const v=$('cextra').value.trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){cmsg('Enter a full email address, like name@example.com.');return;}
+  SEL.add(v);$('cextra').value='';cmsg('');renderRcpt();
+});
+document.addEventListener('click',e=>{if(!e.target.closest('#rdd'))$('rdd').open=false;});
+async function copyC(txt){try{await navigator.clipboard.writeText(txt);cmsg('Copied.');}catch(e){$('cbody').focus();$('cbody').select();cmsg('Select all and copy: your browser blocked the copy button.');}}
+$('ccopy').addEventListener('click',()=>copyC($('cbody').value));
+$('ccopyall').addEventListener('click',()=>copyC('Subject: '+$('csub').value+'\n\n'+$('cbody').value));
+$('cclear').addEventListener('click',()=>{SEL.clear();['csub','ckeys','cbody','cextra'].forEach(i=>$(i).value='');cmsg('');renderRcpt();});
+$('cwrite').addEventListener('click',async()=>{
+  const keys=$('ckeys').value.trim();
+  if(!keys){cmsg('Add a few key points first.');return;}
+  const s=await claude.use('sample');
+  if(!s){
+    const first=[...SEL].map(e=>((CONTACTS.find(c=>c.e===e)||{}).n||'').replace(/.*\((\w+).*\)/,'$1')).filter(Boolean);
+    const greet=first.length?'Hi '+first.join(' and ')+',':'Hi [name],';
+    const pts=keys.split(/\n|;|\.\s/).map(x=>x.trim()).filter(Boolean).map(x=>'- '+x.replace(/^[-*]\s*/,'').replace(/\.$/,''));
+    $('cbody').value=greet+'\n\nI am getting in touch about our wedding on Saturday 27 February 2027 at 12 Example Lane, Sampletown. A few things:\n\n'+pts.join('\n')+'\n\nCould you let me know when you have a moment?\n\nThanks,\nAlex';
+    if(!$('csub').value.trim())$('csub').value='Our wedding on 27 February 2027';
+    cmsg('Draft built from your key points. In the Claude-hosted version, Claude writes it in full sentences.');return;
+  }
+  const names=[...SEL].map(e=>(CONTACTS.find(c=>c.e===e)||{}).n||e).join('; ')||'not chosen yet';
+  const prompt='You write short emails for Alex, who is planning his wedding with Sam.\nFacts: the wedding is on Saturday 27 February 2027 at 12 Example Lane, Sampletown, Auckland. 80 to 100 guests. Guests arrive about 3pm, dinner is 5 to 5:30pm, finish about 10pm.\nRecipients: '+names+'\nTone: '+$('ctone').value.toLowerCase()+'\nKey points to cover: '+keys+'\nRules: use only the facts above and the key points. Do not invent prices, dates, times or promises. Put any missing detail in [square brackets]. Sign off as Alex. Plain text, no markdown.\nReply in exactly this format:\nSubject: <subject line>\n\n<email body>';
+  $('cwrite').disabled=true;cmsg('Writing...');
+  try{
+    const r=await s(prompt,{cache:false});
+    const t=String(r.text||'').trim(),m=t.match(/^Subject:\s*(.+?)\n+([\s\S]*)$/i);
+    if(m){if(!$('csub').value.trim())$('csub').value=m[1].trim();$('cbody').value=m[2].trim();}else{$('cbody').value=t;}
+    cmsg('Written. Check it before you use it.');
+  }catch(e){cmsg('Could not write the email. Try again.');}
+  $('cwrite').disabled=false;
+});
+renderRcpt();
+const dmsg=t=>{$('dmsg').textContent=t};
+async function copyText(txt){
+  try{await navigator.clipboard.writeText(txt);dmsg('Copied.');}
+  catch(e){$('dbody').focus();$('dbody').select();dmsg('Select all and copy: your browser blocked the copy button.');}
+}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-draft]');
+  if(b){const d=DRAFTS[b.dataset.draft];$('dto').value=d.to||'';$('dsub').value=d.sub;$('dbody').value=d.body.join('\n');
+    dmsg(d.to?'':'Add the email address. It is not in your emails yet.');
+    $('draftbox').hidden=false;$('draftbox').scrollIntoView({behavior:'smooth',block:'start'});return;}
+  if(e.target.id==='dclose'){$('draftbox').hidden=true;return;}
+  if(e.target.id==='dcopy'){copyText($('dbody').value);return;}
+  if(e.target.id==='dcopyall'){copyText('Subject: '+$('dsub').value+'\n\n'+$('dbody').value);return;}
+  if(e.target.id==='dpolish'){
+    const s=await claude.use('sample');
+    if(!s){dmsg('Rewriting needs Claude, which is not part of this standalone demo.');return;}
+    dmsg('Rewriting...');
+    try{
+      const r=await s('Rewrite this wedding vendor email in a '+$('dtone').value.toLowerCase()+' tone. Keep every fact, date, number and name exactly. Do not add new facts or promises. Reply with only the email body, starting with the greeting and ending with the sign-off.\n\n'+$('dbody').value,{cache:false});
+      $('dbody').value=r.text.trim();dmsg('Rewritten. Check it before you send.');
+    }catch(err){dmsg('Could not rewrite. Your draft is unchanged.');}
+    return;
+  }
+});
+document.addEventListener('click',e=>{
+  const a=e.target.closest('[data-go]'); if(!a)return; e.preventDefault();
+  const el=$(a.dataset.go); if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+});
+document.addEventListener('change',e=>{
+  const g=e.target.dataset;
+  if(g.done){S.done[g.done]=e.target.checked}
+  else if(g.inc){S.inc[g.inc]=e.target.checked}
+  else if(g.amt!==undefined){S.amt[g.amt]=e.target.value===''?null:+e.target.value}
+  else return; save(); render();
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-chk]'); if(!b)return;
+  S.chk[b.dataset.chk]=+b.dataset.v; save(); render();
+});
+const SIGN=['','Thanks,','Alex'];
+const DRAFTS={
+ 'r-great':{to:'jamie@samplecatering.example',sub:'Sunday site visit and signed T&Cs',body:['Hi Jamie,','','Thanks for the revised proposal. Sunday at 3pm works for the site visit at 12 Example Lane, Sampletown. [Change if needed.]','','Please find attached our signed T&Cs [attach before sending].','','Could you send through the deposit invoice? We’re happy for it to be based on 80 guests, as you suggested. We’ll confirm final numbers by 16 February.',...SIGN]},
+ 'r-c2c':{to:'vera@harbourevents.example',sub:'Re: Wedding catering 27 February 2027',body:['Hi Vera,','','Thanks for the estimate and for following up. We’ve decided to go with another caterer for 27 February, so we won’t need to proceed.','','We really appreciate the time you put in.',...SIGN]},
+ 'r-urban':{to:'bailey@cityplates.example',sub:'Re: Wedding proposal 27 February 2027',body:['Hi Bailey,','','Thank you for the plated menu proposal. We’ve decided to go with another caterer for our wedding on 27 February, so we won’t be taking it further.','','Thanks again for your time.',...SIGN]},
+ 'r-cg':{to:'hello@mixerman.example',sub:'Booking the caravan bar for 27 February 2027',body:['Hi Fiona,','','We’d like to lock in the caravan bar and cocktails for Saturday 27 February 2027 at 12 Example Lane, Sampletown, finishing around 11pm. Could you confirm you’re available and send a booking invoice?','','One question on the beer and wine package: the email says $58 per head plus GST totals $5,336 for 100 guests, but that figure matches 80 guests. Which guest number is the price for? We’re likely to supply our own wine, so please also confirm that’s fine.',...SIGN]},
+ 'r-gp':{to:'gemma@pourandco.example',sub:'Details for 27 February 2027 BYO bar',body:['Hi Gemma,','','Sorry for the slow reply. Details for our wedding on Saturday 27 February 2027:','','- Address: 12 Example Lane, Sampletown','- Bar times: [start time] to [finish time]','- Guests: about 80–100','- Cocktails: [your choices]','','Could you update the quote based on these?',...SIGN]},
+ 'r-fork':{to:'',sub:'Re: Wedding catering 27 February 2027',body:['Hi Ellis,','','Thank you for the proposal and for checking in. We’ve decided to go with another caterer for 27 February, so please release the date.','','We appreciate your time.',...SIGN]},
+ 'r-fernz':{to:'',sub:'Re: Wedding catering 27 February 2027',body:['Hi Sasha,','','Thanks for confirming availability and the delivery details. We’ve decided to go with another caterer for 27 February, so we won’t proceed.','','Thanks again.',...SIGN]},
+ 'r-flag':{to:'',sub:'Marquee proposal for 27 February 2027',body:['Hi Gina,','','Thanks for the Marquee Tent proposal. Could you confirm the total price and whether the 20 x 14 m size is suitable for 80–100 guests with tables, a bar and catering? We understood we’d need about 23 x 17 m.','','We may already have a marquee booked, so I’ll confirm shortly whether we need to go ahead.',...SIGN]},
+ 'r-whippy':{to:'north@conecart.example',sub:'Confirming Cone Cart for 27 February 2027',body:['Hi Dana,','','Following up on our request for Saturday 27 February 2027 at 12 Example Lane, Sampletown: 3pm start, about 90 people, $400 minimum spend, no hire fee. Could you confirm you’re available and that these terms are fine?','','We’ll let you know whether 3pm or 3:30pm is the best start nearer the date.',...SIGN]}
+};
+let DOCS=[],assetsApi=null,docsCol=null,confirmId=null;
+const VENDORS=['General',...new Set(COSTS.map(c=>c.v.replace('&amp;','&')))];
+$('dvendor').innerHTML=VENDORS.map(v=>`<option>${esc(v)}</option>`).join('');
+const kb=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+function renderDocs(){
+  $('docs').innerHTML=DOCS.length?DOCS.map(d=>`<div class="row"><span class="pill mute">${esc(d.vendor)}</span>
+    <div><div class="t"><a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.name)}</a></div><div class="d">${kb(d.size||0)} · added ${fd(new Date(d.addedAt||Date.now()))}</div></div>
+    <div class="side"><button class="btn ${confirmId===d.id?'warn':''}" type="button" data-rm="${esc(d.id)}">${confirmId===d.id?'Really remove?':'Remove'}</button></div></div>`).join('')
+  :'<div class="row"><span></span><div class="d">No documents yet. Add the signed Sample Catering T&amp;Cs, quotes and receipts here.</div></div>';
+}
+async function addFiles(files){
+  if(!assetsApi||!docsCol){$('dstat').textContent='Uploading is not available here. Open the page as its owner.';return;}
+  for(const f of files){
+    $('dstat').textContent='Uploading '+f.name+'...';
+    try{
+      const a=await assetsApi.upload(f);
+      await docsCol.add({name:f.name,vendor:$('dvendor').value,url:a.url,assetId:a.id,size:a.sizeBytes||f.size,addedAt:Date.now()});
+      $('dstat').textContent='Added '+f.name;
+    }catch(e){$('dstat').textContent='Could not add '+f.name+(e&&e.code==='unsupported_type'?': that file type is not supported. Use PDF, image or text.':e&&e.code==='too_big'?': this demo keeps files in your browser, so the limit is 1.5 MB.':'. Try again.');}
+  }
+}
+$('dpick').addEventListener('click',()=>$('dfile').click());
+$('dfile').addEventListener('change',e=>{addFiles([...e.target.files]);e.target.value='';});
+const up=$('up');
+['dragover','dragenter'].forEach(n=>up.addEventListener(n,e=>{e.preventDefault();up.classList.add('drag')}));
+['dragleave','drop'].forEach(n=>up.addEventListener(n,e=>{e.preventDefault();up.classList.remove('drag')}));
+up.addEventListener('drop',e=>addFiles([...e.dataTransfer.files]));
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-rm]'); if(!b)return;
+  const id=b.dataset.rm;
+  if(confirmId!==id){confirmId=id;renderDocs();return;}
+  confirmId=null;
+  const d=DOCS.find(x=>x.id===id); if(!d)return;
+  try{await docsCol.doc(id).delete(); if(assetsApi&&d.assetId)await assetsApi.delete(d.assetId);}catch(err){$('dstat').textContent='Could not remove that file. Try again.';renderDocs();}
+});
+render();renderDocs();
+(async()=>{
+  try{
+    assetsApi=await claude.use('assets');
+    if(!assetsApi){$('dpick').disabled=true;$('dstat').textContent='Uploading is not available.';}
+    const db=await claude.use('db'); if(!db)return;
+    docsCol=db.collection('docs');
+    docsCol.onSnapshot(s=>{DOCS=s.docs.map(x=>({id:x.id,...x.data()})).sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));renderDocs();},()=>{});
+    ref=db.doc('planner/state');
+    let first=true;
+    ref.onSnapshot(s=>{
+      if(s.exists){const d=s.data();S={done:{...d.done},inc:{...d.inc},amt:{...d.amt},chk:{...d.chk}};
+        const a=document.activeElement; if(first||!(a&&a.tagName==='INPUT'&&a.type==='number'))render();}
+      first=false;
+    },()=>{});
+  }catch(e){}
+})();
+</script>
+
+</body>
+</html>
